@@ -1,0 +1,49 @@
+Metadata-Version: 2.4
+Name: hidra
+Version: 0.1.0
+Summary: A lightweight multitenancy library for Python APIs
+Author-email: Hamilton Patiño Solano <hamiltonpatinosolano@gmail.com>
+Keywords: multitenancy,fastapi,sqlalchemy,tenancy
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: sqlalchemy>=1.4.0
+Provides-Extra: fastapi
+Requires-Dist: fastapi>=0.68.0; extra == "fastapi"
+Requires-Dist: starlette>=0.14.0; extra == "fastapi"
+Provides-Extra: flask
+Requires-Dist: flask>=2.0.0; extra == "flask"
+Requires-Dist: werkzeug>=2.0.0; extra == "flask"
+Provides-Extra: dev
+Requires-Dist: pytest>=6.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.15.0; extra == "dev"
+Requires-Dist: black>=21.0; extra == "dev"
+Requires-Dist: isort>=5.0; extra == "dev"
+Dynamic: license-file
+
+# Python Multitenancy
+
+A lightweight, framework-agnostic multitenancy library for Python APIs.
+
+## Installation
+
+```bash
+# Basic installation
+pip install python-multitenancy
+
+# With FastAPI support
+pip install python-multitenancy[fastapi]
+
+# With Flask support  
+pip install python-multitenancy[flask]
+
+# Development dependencies
+pip install python-multitenancy[dev]
