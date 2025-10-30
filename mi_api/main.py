@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
+from pydantic import BaseModel  # ✅ Nuevo import
 
-# Importar nuestra librería CON decoradores corregidos
+# Importar nuestra librería
 from multitenancy import TenantMiddleware, MultiTenantSession, tenant_required, specific_tenants
 from multitenancy.core import tenant_context
+from multitenancy.error_handler import ErrorHandlerMiddleware
 
 app = FastAPI(
     title="API Test Multitenant",
@@ -13,7 +15,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configurar middleware
+# ✅ PRIMERO: Middleware de manejo de errores (debe ir primero)
+app.add_middleware(ErrorHandlerMiddleware)
+
+# ✅ SEGUNDO: Middleware de tenant
 app.add_middleware(
     TenantMiddleware, 
     header_name="X-Tenant-ID",
@@ -31,10 +36,10 @@ app.add_middleware(
 # Configurar SQLite para desarrollo
 mt_session = MultiTenantSession({
     "db_driver": "sqlite",
-    "echo_sql": True
+    "echo_sql": False
 })
 
-# Modelos
+# Modelos SQLAlchemy
 Base = declarative_base()
 
 class User(Base):
@@ -48,6 +53,15 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     price = Column(Integer)
+
+# ✅ Modelos Pydantic para request bodies
+class UserCreate(BaseModel):
+    name: str
+    email: str
+
+class ProductCreate(BaseModel):
+    name: str
+    price: float
 
 def get_db():
     db = mt_session.get_session()
@@ -132,11 +146,11 @@ async def list_tenants():
     }
 
 # ============================================================================
-# 🔐 ENDPOINTS PROTEGIDOS - CON DECORADORES
+# 🔐 ENDPOINTS PROTEGIDOS - CON JSON EN BODY
 # ============================================================================
 
 @app.get("/users")
-@tenant_required  # ✅ Decorador funcionando
+@tenant_required
 async def get_users(db: Session = Depends(get_db)):
     """Obtener usuarios del tenant actual"""
     try:
@@ -147,7 +161,6 @@ async def get_users(db: Session = Depends(get_db)):
             "users": [{"id": u.id, "name": u.name, "email": u.email} for u in users]
         }
     except Exception as e:
-        # Crear tablas si no existen
         engine = mt_session.get_engine(tenant_context.get_tenant())
         Base.metadata.create_all(bind=engine)
         return {
@@ -158,15 +171,14 @@ async def get_users(db: Session = Depends(get_db)):
         }
 
 @app.post("/users")
-@tenant_required  # ✅ Decorador funcionando
-async def create_user(name: str, email: str, db: Session = Depends(get_db)):
-    """Crear usuario para el tenant actual"""
-    # Verificar si el usuario ya existe
-    existing_user = db.query(User).filter(User.email == email).first()
+@tenant_required
+async def create_user(user_data: UserCreate, db: Session = Depends(get_db)):  # ✅ Cambiado a UserCreate
+    """Crear usuario para el tenant actual - ACEPTA JSON"""
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="El usuario ya existe")
     
-    user = User(name=name, email=email)
+    user = User(name=user_data.name, email=user_data.email)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -177,7 +189,7 @@ async def create_user(name: str, email: str, db: Session = Depends(get_db)):
     }
 
 @app.get("/products")
-@tenant_required  # ✅ Decorador funcionando
+@tenant_required
 async def get_products(db: Session = Depends(get_db)):
     """Obtener productos del tenant actual"""
     try:
@@ -198,21 +210,21 @@ async def get_products(db: Session = Depends(get_db)):
         }
 
 @app.post("/products")
-@tenant_required  # ✅ Decorador funcionando
-async def create_product(name: str, price: float, db: Session = Depends(get_db)):
-    """Crear producto para el tenant actual"""
-    product = Product(name=name, price=int(price * 100))  # Precio en centavos
+@tenant_required
+async def create_product(product_data: ProductCreate, db: Session = Depends(get_db)):  # ✅ Nuevo endpoint POST para productos
+    """Crear producto para el tenant actual - ACEPTA JSON"""
+    product = Product(name=product_data.name, price=int(product_data.price * 100))  # Precio en centavos
     db.add(product)
     db.commit()
     db.refresh(product)
     
     return {
         "message": "Producto creado exitosamente",
-        "product": {"id": product.id, "name": product.name, "price": price}
+        "product": {"id": product.id, "name": product.name, "price": product_data.price}
     }
 
 @app.get("/tenant/info")
-@tenant_required  # ✅ Decorador funcionando
+@tenant_required
 async def get_tenant_info():
     """Obtener información del tenant actual"""
     tenant_id = tenant_context.get_tenant()
@@ -227,12 +239,12 @@ async def get_tenant_info():
     }
 
 # ============================================================================
-# 🚀 ENDPOINTS EXCLUSIVOS - CON DECORADORES ANIDADOS
+# 🚀 ENDPOINTS EXCLUSIVOS
 # ============================================================================
 
 @app.get("/analytics")
 @tenant_required
-@specific_tenants(["acme-corp", "enterprise-ltd"])  # ✅ Decorador funcionando
+@specific_tenants(["acme-corp", "enterprise-ltd"])
 async def get_analytics(db: Session = Depends(get_db)):
     """Analíticas avanzadas - solo para tenants premium"""
     total_users = db.query(User).count()
@@ -246,21 +258,6 @@ async def get_analytics(db: Session = Depends(get_db)):
             "user_engagement": "high" if total_users > 50 else "low",
             "message": "Datos analíticos avanzados - función premium"
         }
-    }
-
-@app.get("/premium-features")
-@tenant_required
-@specific_tenants(["acme-corp", "enterprise-ltd"])
-async def get_premium_features():
-    """Características premium - solo para tenants específicos"""
-    tenant_id = tenant_context.get_tenant()
-    manager = tenant_context.tenant_manager
-    config = manager.get_tenant_config(tenant_id)
-    
-    return {
-        "tenant": tenant_id,
-        "premium_features": config.get("features", []),
-        "message": "Acceso a características premium concedido"
     }
 
 if __name__ == "__main__":
