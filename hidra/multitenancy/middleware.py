@@ -40,15 +40,6 @@ if FASTAPI_AVAILABLE:
                     "error": "Tenant identification required",
                     "message": "This endpoint requires tenant identification to access tenant-specific data",
                     "solution": f"Add the '{self.header_name}' header to your request",
-                    "example": {
-                        "headers": {
-                            self.header_name: "acme-corp",
-                            "Content-Type": "application/json"
-                        },
-                        "curl": f'curl -H "{self.header_name}: acme-corp" {request.url}'
-                    },
-                    "available_tenants": available_tenants,
-                    "public_endpoints": self.exclude_paths
                 }
                 return JSONResponse(status_code=400, content=error_response)
             
