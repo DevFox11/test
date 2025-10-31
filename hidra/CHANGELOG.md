@@ -1,0 +1,36 @@
+# CHANGELOG
+
+## [0.2.0] - 2025-10-31
+
+### Added
+- Función `quick_start()` para configuración rápida de la biblioteca
+- Decorador mejorado `requires_tenant()` con parámetros más flexibles
+- Clase `HidraDB` para acceso simplificado a base de datos
+- Función `create_db_session()` para creación simplificada de sesiones
+- Herramientas de diagnóstico: `diagnose_setup()` y `print_diagnosis()`
+- Funciones de ayuda: `get_current_tenant_id()`, `tenant_exists()`, `get_current_tenant_config()`
+- Función `setup_fastapi_app()` para integración simplificada con FastAPI
+- Excepciones mejoradas con mensajes amigables y sugerencias
+- Soporte para ambas interfaces del middleware (anterior y nueva)
+- Ejemplos de uso en directorio `examples/`
+
+### Changed
+- Mejorada la compatibilidad hacia atrás del middleware
+- Actualizados los mensajes de error para ser más descriptivos
+- Simplificada la configuración inicial de la biblioteca
+- Actualizados los READMEs con información sobre nuevas características
+
+### Fixed
+- Problemas de importación circular en el módulo de diagnóstico
+- Compatibilidad con versiones antiguas de middleware en tests
+- Codificación de caracteres en archivos de ejemplo
+
+## [0.1.0] - Fecha inicial
+
+### Added
+- Biblioteca base para multitenancy en Python
+- Soporte para múltiples estrategias de tenencia
+- Middleware para FastAPI
+- Decoradores para protección de endpoints
+- Soporte para contextvars
+- Tests unitarios básicos

@@ -4,8 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
 
 # Importar nuestra librería
-from multitenancy import TenantMiddleware, MultiTenantSession
-from multitenancy.core import tenant_context
+from hidra import TenantMiddleware, MultiTenantSession
+from hidra.core import tenant_context
 
 app = FastAPI(
     title="API Test Multitenant - DEBUG",
@@ -15,18 +15,17 @@ app = FastAPI(
 
 # Configurar middleware con logging
 app.add_middleware(
-    TenantMiddleware, 
-    header_name="X-Tenant-ID",
+    TenantMiddleware,
     exclude_paths=[
-        "/", 
-        "/health", 
-        "/tenants", 
-        "/docs", 
+        "/",
+        "/health",
+        "/tenants",
+        "/docs",
         "/openapi.json",
         "/favicon.ico",
         "/redoc",
-        "/debug"
-    ]
+        "/debug",
+    ],
 )
 
 # Configurar SQLite para desarrollo
@@ -130,7 +129,7 @@ async def get_users(db: Session = Depends(get_db)):
         }
     except Exception as e:
         # Crear tablas si no existen
-        engine = mt_session.get_engine(tenant_id)
+        engine = db.get_bind()
         Base.metadata.create_all(bind=engine)
         return {
             "tenant": tenant_id,
