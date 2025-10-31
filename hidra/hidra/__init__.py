@@ -9,6 +9,8 @@ from .helpers import get_current_tenant_id, tenant_exists, get_current_tenant_co
 from .db_simple import HidraDB, create_db_session
 from .diagnostic import diagnose_setup, print_diagnosis
 from .integrations import setup_fastapi_app
+from .fastapi_auto_config import create_hidra_app, initialize_hidra_fastapi, get_hidra_config, get_current_tenant_db
+from .auto_tenant_loader import AutoTenantLoader, setup_auto_tenant_loading
 
 __version__ = "0.2.0"
 
@@ -40,5 +42,11 @@ __all__ = [
     "diagnose_setup",
     "print_diagnosis",
     "setup_fastapi_app",
+    "create_hidra_app",
+    "initialize_hidra_fastapi",
+    "get_hidra_config",
+    "get_current_tenant_db",
+    "AutoTenantLoader",
+    "setup_auto_tenant_loading",
     "__version__",
 ]

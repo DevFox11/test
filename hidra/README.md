@@ -41,12 +41,12 @@ pip install hidra-multitenancy[dev]
 
 ## Enhanced Usage Examples
 
-### Quick Start Configuration
+### Quick Start Configuration (With Predefined Tenants)
 
 ```python
 from hidra import quick_start
 
-# Simple configuration with one function
+# Simple configuration with predefined tenants
 config = quick_start(
     db_config={
         "db_driver": "postgresql",
@@ -61,6 +61,35 @@ config = quick_start(
         "company2": {"plan": "basic"}
     }
 )
+```
+
+### Minimal Configuration for FastAPI (No Predefined Tenants Required)
+
+```python
+from fastapi import FastAPI
+from hidra import create_hidra_app
+
+# Create FastAPI app with minimal configuration
+app = create_hidra_app(
+    db_config={
+        "db_driver": "postgresql",
+        "db_host": "localhost",
+        "db_port": "5432",
+        "db_username": "postgres",
+        "db_password": "password",
+        "db_name": "multitenant"
+    },
+    # Tenants are loaded automatically when requested
+    enable_auto_loading=True,
+    auto_tenant_validation=True  # Validate tenants exist before processing
+)
+
+# Protected endpoint - no need to define tenants in code
+@app.get("/data")
+async def get_data():
+    from hidra import get_current_tenant_id
+    tenant_id = get_current_tenant_id()
+    return {"tenant_id": tenant_id, "message": "Data retrieved"}
 ```
 
 ### Enhanced Decorators

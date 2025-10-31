@@ -192,6 +192,28 @@ Más flexible que `@tenant_required`:
 @requires_tenant(["tenant1", "tenant2"])
 ```
 
+### Configuración Mínima para FastAPI
+
+Ahora puedes integrar Hidra en cualquier proyecto FastAPI con solo 3 líneas de configuración:
+
+```python
+from fastapi import FastAPI
+from hidra import create_hidra_app
+
+# Crear aplicación con soporte multitenant con mínima configuración
+app = create_hidra_app(
+    db_config={"db_driver": "postgresql", "db_host": "localhost", ...}
+)
+```
+
+Esta configuración:
+
+- Agrega automáticamente el middleware de tenant
+- Configura carga automática de tenants (no necesitas definirlos en código)
+- Valida automáticamente los tenants cuando se solicitan
+- Configura la estrategia de tenencia predeterminada
+- Prepara la aplicación para manejar solicitudes multitenant
+
 ### Acceso Simplificado a Base de Datos
 
 ```python

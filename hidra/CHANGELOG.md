@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [0.2.1] - 2025-10-31
+
+### Added
+- Sistema de carga automática de tenants con `AutoTenantLoader`
+- Función `create_hidra_app()` para configuración mínima en FastAPI
+- Función `initialize_hidra_fastapi()` para integración automática
+- Configuración sin código previo de tenants (carga dinámica)
+- Validación automática de tenants sin definirlos en código
+- Soporte para carga de tenants desde múltiples fuentes (config, db, api)
+- Ejemplos de uso con mínima configuración
+
+### Changed
+- Ahora se puede usar la biblioteca sin definir tenants en el código
+- La configuración mínima para FastAPI se reduce a 3 líneas
+- Mejorada la documentación con ejemplos de configuración mínima
+
 ## [0.2.0] - 2025-10-31
 
 ### Added
