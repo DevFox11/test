@@ -37,6 +37,19 @@ class MultiTenantSession:
             self.session_makers[tenant_id] = sessionmaker(bind=engine)
         return self.session_makers[tenant_id]()
 
+    def _clean_tenant_name(self, tenant_id: str) -> str:
+        """Limpia el nombre del tenant reemplazando caracteres no válidos para schemas en PostgreSQL"""
+        import re
+        # PostgreSQL no permite guiones (-) en nombres de schema
+        # Reemplazamos guiones por guiones bajos
+        cleaned_name = tenant_id.replace("-", "_")
+        
+        # Asegurar que comience con una letra o guion bajo
+        if cleaned_name and not re.match(r'^[a-zA-Z_]', cleaned_name):
+            cleaned_name = f"tenant_{cleaned_name}"
+            
+        return cleaned_name
+
     def _get_schema_session(self, tenant_id: str) -> Session:
         if tenant_id not in self.session_makers:
             db_url = self._build_schema_connection_string(tenant_id)
@@ -44,8 +57,10 @@ class MultiTenantSession:
                 db_url, pool_pre_ping=True, echo=self.base_config.get("echo_sql", False)
             )
             # Configurar búsqueda de esquema para el tenant
+            # Usar el nombre de tenant limpio para el search_path en PostgreSQL
+            clean_tenant_name = self._clean_tenant_name(tenant_id)
             with engine.connect() as conn:
-                conn.execute(text(f"SET search_path TO tenant_{tenant_id}, public"))
+                conn.execute(text(f'SET search_path TO "{clean_tenant_name}", public'))
                 conn.commit()
             self.engines[tenant_id] = engine
             self.session_makers[tenant_id] = sessionmaker(bind=engine)

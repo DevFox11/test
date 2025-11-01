@@ -1,7 +1,7 @@
 from .core import TenantContext, tenant_context, MultiTenantManager, TenancyStrategy
 from .database import MultiTenantSession, create_tenant_aware_session
 from .decorators import tenant_required, specific_tenants, requires_tenant
-from .exceptions import MultitenancyError, TenantNotFoundError, TenantContextError, HidraError
+from .exceptions import MultitenancyError, TenantNotFoundError, TenantContextError, HidraError, InvalidTenantNameError
 from .models import TenantAwareModel
 from .migrations import run_migrations_for_all_tenants
 from .quick_start import quick_start
@@ -9,8 +9,9 @@ from .helpers import get_current_tenant_id, tenant_exists, get_current_tenant_co
 from .db_simple import HidraDB, create_db_session
 from .diagnostic import diagnose_setup, print_diagnosis
 from .integrations import setup_fastapi_app
-from .fastapi_auto_config import create_hidra_app, initialize_hidra_fastapi, get_hidra_config, get_current_tenant_db
+from .fastapi_auto_config import create_hidra_app, initialize_hidra_fastapi, get_hidra_config, get_current_tenant_db, default_tenant_registration
 from .auto_tenant_loader import AutoTenantLoader, setup_auto_tenant_loading
+from .schema_manager import SchemaManager
 
 __version__ = "0.2.0"
 
@@ -31,6 +32,7 @@ __all__ = [
     "TenantNotFoundError",
     "TenantContextError",
     "HidraError",
+    "InvalidTenantNameError",
     "TenantMiddleware",
     "run_migrations_for_all_tenants",
     "quick_start",
@@ -46,7 +48,9 @@ __all__ = [
     "initialize_hidra_fastapi",
     "get_hidra_config",
     "get_current_tenant_db",
+    "default_tenant_registration",
     "AutoTenantLoader",
     "setup_auto_tenant_loading",
+    "SchemaManager",
     "__version__",
 ]

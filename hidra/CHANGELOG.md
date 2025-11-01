@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [0.2.2] - 2025-10-31
+
+### Added
+- Nuevo módulo `schema_manager.py` para gestión avanzada de schemas
+- Funcionalidad para crear la tabla `tenants` en el schema público
+- Validación y limpieza de nombres de tenants para compatibilidad con PostgreSQL
+- Soporte para reemplazo automático de guiones (-) por guiones bajos (_) en nombres de schemas
+- Clase `SchemaManager` para manejo completo de entornos multitenant
+- Nueva excepción `InvalidTenantNameError` para manejo de nombres inválidos
+- Tests para la nueva funcionalidad de schema management
+
+### Changed
+- Actualizado el middleware para usar nombres de schemas limpios en la configuración de search_path
+- Mejorada la validación de nombres de tenants para cumplir con las restricciones de PostgreSQL
+- Actualizado README con documentación de las nuevas características
+- Actualizado ejemplo de uso para demostrar la nueva funcionalidad
+
 ## [0.2.1] - 2025-10-31
 
 ### Added

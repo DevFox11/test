@@ -2,18 +2,21 @@ LICENSE
 README.md
 pyproject.toml
 hidra/__init__.py
+hidra/auto_tenant_loader.py
 hidra/core.py
 hidra/database.py
 hidra/db_simple.py
 hidra/decorators.py
 hidra/diagnostic.py
 hidra/exceptions.py
+hidra/fastapi_auto_config.py
 hidra/helpers.py
 hidra/integrations.py
 hidra/middleware.py
 hidra/migrations.py
 hidra/models.py
 hidra/quick_start.py
+hidra/schema_manager.py
 hidra.egg-info/PKG-INFO
 hidra.egg-info/SOURCES.txt
 hidra.egg-info/dependency_links.txt
@@ -23,3 +26,4 @@ tests/test_core.py
 tests/test_database.py
 tests/test_middleware.py
 tests/test_migrations.py
+tests/test_schema_manager.py

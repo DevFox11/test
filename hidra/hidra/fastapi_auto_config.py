@@ -115,10 +115,38 @@ def get_current_tenant_db(request: Request):
     else:
         raise RuntimeError("Hidra not properly configured in this application")
 
+async def default_tenant_registration(session, tenant_data: dict):
+    """
+    Función por defecto para registrar un tenant en la tabla pública.
+    Esta función puede ser reemplazada por el desarrollador con su propia lógica.
+    """
+    from sqlalchemy import text
+    
+    # Esta es una implementación básica, el desarrollador debería proporcionar
+    # su propia lógica acorde a la estructura de su tabla tenants
+    query = text("""
+        INSERT INTO public.tenants (id, name, status) 
+        VALUES (:id, :name, :status)
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            updated_at = CURRENT_TIMESTAMP,
+            status = EXCLUDED.status
+    """)
+    session.execute(query, {
+        "id": tenant_data["id"],
+        "name": tenant_data["name"],
+        "status": tenant_data.get("status", "active")
+    })
+    session.commit()
+
+
 def initialize_hidra_fastapi(
     app: FastAPI,
     db_config: Dict[str, Any] = None,
     strategy: TenancyStrategy = None,
+    include_default_endpoints: bool = True,
+    include_tenant_registration: bool = True,
+    tenant_registration_func=None,
     **kwargs
 ):
     """
@@ -128,25 +156,71 @@ def initialize_hidra_fastapi(
         app: Instancia de FastAPI
         db_config: Configuración de base de datos
         strategy: Estrategia de tenencia
+        include_default_endpoints: Incluir endpoints de salud
+        include_tenant_registration: Incluir endpoint de registro de tenant
+        tenant_registration_func: Función personalizada para registrar tenants
         **kwargs: Otros parámetros de configuración
     """
+    from .schema_manager import SchemaManager
+    
     # Configurar automáticamente la app
-    create_hidra_app(
+    app = create_hidra_app(
         app=app,
         db_config=db_config,
         strategy=strategy,
         **kwargs
     )
     
-    # Agregar endpoints estándar si se desea
-    @app.get("/health/tenant")
-    async def tenant_health():
-        """Endpoint para verificar estado del sistema multitenant"""
-        config = get_hidra_config(app)
-        return {
-            "status": "healthy",
-            "strategy": config["strategy"].value if config else "not_configured",
-            "tenant_validation": "enabled" if config else "disabled"
-        }
+    # Agregar schema manager al estado de la app
+    schema_manager = SchemaManager(db_config)
+    app.state.schema_manager = schema_manager
+    
+    # Configurar el entorno multitenant
+    schema_manager.setup_multi_tenant_environment()
+    
+    if include_default_endpoints:
+        @app.get("/health/tenant")
+        async def tenant_health():
+            """Endpoint para verificar estado del sistema multitenant"""
+            config = get_hidra_config(app)
+            return {
+                "status": "healthy",
+                "strategy": config["strategy"].value if config else "not_configured",
+                "tenant_validation": "enabled" if config else "disabled"
+            }
+    
+    if include_tenant_registration:
+        @app.post("/register-tenant")
+        async def register_tenant(tenant_info: dict):
+            """Endpoint para registrar un nuevo tenant"""
+            from .database import MultiTenantSession
+            from .db_simple import HidraDB
+            
+            tenant_id = tenant_info.get("id")
+            if not tenant_id:
+                raise ValueError("Tenant ID is required")
+            
+            tenant_name = tenant_info.get("name", tenant_id)
+            
+            # Usar schema manager para crear el schema del tenant
+            schema_manager.initialize_tenant(
+                tenant_id=tenant_id,
+                tenant_name=tenant_name,
+                register_tenant=True  # Registrará en la tabla por defecto
+            )
+            
+            # Opcionalmente crear tablas en el schema del tenant
+            create_tables_func = tenant_info.get("create_tables_func")
+            if create_tables_func:
+                schema_manager.create_tables_in_tenant_schema(
+                    tenant_id=tenant_id,
+                    create_tables_func=create_tables_func
+                )
+            
+            return {
+                "message": f"Tenant {tenant_id} registered successfully",
+                "tenant_id": tenant_id,
+                "tenant_name": tenant_name
+            }
     
     return app

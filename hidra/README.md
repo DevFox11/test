@@ -15,9 +15,12 @@ Hidra is a lightweight, framework-agnostic library for building multi-tenant app
 - **Context-Aware:** Uses `contextvars` to safely manage the current tenant's context, making it suitable for asynchronous applications.
 - **Extensible:** Easily extendable to support custom tenancy strategies and tenant identification methods.
 - **Optional Framework Integrations:** Provides optional, ready-to-use middlewares and decorators for FastAPI and Flask.
-- **Easy Setup:** Simple configuration with `quick_start()` function
+- **Easy Setup:** Simple configuration with `quick_start()` and `initialize_hidra_fastapi()` functions
 - **Enhanced Decorators:** Improved `requires_tenant()` decorator with more flexible options
 - **Simplified Database Access:** `HidraDB` class for easier database session management
+- **Schema Management:** Advanced schema management tools to ensure proper tenant schema creation and naming compatibility with PostgreSQL (e.g., replacing hyphens with underscores).
+- **Developer-Controlled Tenants Table:** The structure of the `tenants` table is defined by the developer to match business requirements, with optional convenience functions for common use cases.
+- **Automatic Schema Validation:** Built-in validation and cleaning of tenant names for PostgreSQL compatibility.
 - **Diagnostic Tools:** Built-in functions to diagnose configuration issues
 - **Helpful Error Messages:** Clear error messages with suggestions for resolution
 

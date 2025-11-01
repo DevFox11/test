@@ -46,6 +46,14 @@ Hidra is a lightweight, framework-agnostic library for building multi-tenant app
 - **Context-Aware:** Uses `contextvars` to safely manage the current tenant's context, making it suitable for asynchronous applications.
 - **Extensible:** Easily extendable to support custom tenancy strategies and tenant identification methods.
 - **Optional Framework Integrations:** Provides optional, ready-to-use middlewares and decorators for FastAPI and Flask.
+- **Easy Setup:** Simple configuration with `quick_start()` and `initialize_hidra_fastapi()` functions
+- **Enhanced Decorators:** Improved `requires_tenant()` decorator with more flexible options
+- **Simplified Database Access:** `HidraDB` class for easier database session management
+- **Schema Management:** Advanced schema management tools to ensure proper tenant schema creation and naming compatibility with PostgreSQL (e.g., replacing hyphens with underscores).
+- **Developer-Controlled Tenants Table:** The structure of the `tenants` table is defined by the developer to match business requirements, with optional convenience functions for common use cases.
+- **Automatic Schema Validation:** Built-in validation and cleaning of tenant names for PostgreSQL compatibility.
+- **Diagnostic Tools:** Built-in functions to diagnose configuration issues
+- **Helpful Error Messages:** Clear error messages with suggestions for resolution
 
 ## Installation
 
@@ -65,11 +73,109 @@ pip install hidra-multitenancy[flask]
 pip install hidra-multitenancy[dev]
 ```
 
-## Basic Usage (with FastAPI)
+## Enhanced Usage Examples
+
+### Quick Start Configuration (With Predefined Tenants)
+
+```python
+from hidra import quick_start
+
+# Simple configuration with predefined tenants
+config = quick_start(
+    db_config={
+        "db_driver": "postgresql",
+        "db_host": "localhost",
+        "db_port": "5432",
+        "db_username": "postgres",
+        "db_password": "password",
+        "db_name": "multitenant"
+    },
+    tenants={
+        "company1": {"plan": "premium"},
+        "company2": {"plan": "basic"}
+    }
+)
+```
+
+### Minimal Configuration for FastAPI (No Predefined Tenants Required)
+
+```python
+from fastapi import FastAPI
+from hidra import create_hidra_app
+
+# Create FastAPI app with minimal configuration
+app = create_hidra_app(
+    db_config={
+        "db_driver": "postgresql",
+        "db_host": "localhost",
+        "db_port": "5432",
+        "db_username": "postgres",
+        "db_password": "password",
+        "db_name": "multitenant"
+    },
+    # Tenants are loaded automatically when requested
+    enable_auto_loading=True,
+    auto_tenant_validation=True  # Validate tenants exist before processing
+)
+
+# Protected endpoint - no need to define tenants in code
+@app.get("/data")
+async def get_data():
+    from hidra import get_current_tenant_id
+    tenant_id = get_current_tenant_id()
+    return {"tenant_id": tenant_id, "message": "Data retrieved"}
+```
+
+### Enhanced Decorators
+
+```python
+from hidra import requires_tenant
+
+# Any tenant with access
+@app.get("/data")
+@requires_tenant()
+async def get_data():
+    pass
+
+# Specific tenant only
+@app.get("/premium-data")
+@requires_tenant("premium_company")
+async def get_premium_data():
+    pass
+
+# Multiple tenants allowed
+@app.get("/shared-data")
+@requires_tenant(["company1", "company2"])
+async def get_shared_data():
+    pass
+```
+
+### Simplified Database Access
+
+```python
+from hidra import HidraDB
+
+# Create database access
+hidra_db = HidraDB({
+    "db_driver": "postgresql",
+    "db_host": "localhost",
+    "db_port": "5432",
+    "db_username": "postgres",
+    "db_password": "password",
+    "db_name": "multitenant"
+})
+
+# Use with FastAPI Depends
+@app.get("/users")
+async def get_users(db: Session = Depends(hidra_db.get_tenant_db())):
+    pass
+```
+
+### Basic Usage (with FastAPI)
 
 Here's a quick example of how to use Hidra with FastAPI.
 
-### 1. Configure Tenants
+#### 1. Configure Tenants
 
 First, configure your tenants and the tenancy strategy.
 
@@ -91,14 +197,15 @@ manager.set_default_strategy(TenancyStrategy.DATABASE_PER_TENANT)
 tenant_context.tenant_manager = manager
 ```
 
-### 2. Add the Middleware
+#### 2. Add the Middleware
 
 The middleware identifies the tenant from the request (e.g., using a header) and sets it in the context.
 
 ```python
 # main.py
 from fastapi import FastAPI
-from hidra.integrations.fastapi import TenantMiddleware, tenant_required
+from hidra.middleware import TenantMiddleware
+from hidra.decorators import tenant_required
 
 app = FastAPI()
 
@@ -132,6 +239,54 @@ The response would be:
   "tenant_id": "tenant1",
   "db_connection": "postgresql://user:pass@host/db1"
 }
+```
+
+### Complete FastAPI Integration
+
+```python
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from hidra import setup_fastapi_app, requires_tenant
+
+# Create FastAPI app
+app = FastAPI()
+
+# Setup Hidra with FastAPI
+hidra = setup_fastapi_app(
+    app,
+    db_config={
+        "db_driver": "postgresql",
+        "db_host": "localhost",
+        "db_port": "5432",
+        "db_username": "postgres",
+        "db_password": "password",
+        "db_name": "multitenant"
+    },
+    tenants={
+        "tenant1": {"plan": "premium"},
+        "tenant2": {"plan": "basic"}
+    }
+)
+
+# Protected endpoint
+@app.get("/users")
+@requires_tenant()  # Requires tenant
+async def get_users(db: Session = Depends(hidra["session_getter"])):
+    from hidra import get_current_tenant_id
+    tenant_id = get_current_tenant_id()
+    return {"tenant_id": tenant_id, "message": "Users retrieved"}
+```
+
+## Diagnostic Tools
+
+```python
+from hidra import diagnose_setup, print_diagnosis
+
+# Get diagnosis as dictionary
+diagnosis = diagnose_setup()
+
+# Print formatted diagnosis
+print_diagnosis()
 ```
 
 ## Contributing
